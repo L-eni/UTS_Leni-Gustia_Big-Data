@@ -13,7 +13,7 @@ import os
 @st.cache_resource
 def load_models():
     # Cek keberadaan file model
-    yolo_path = "model/Leni_Gustia_Laporan_4.pt"
+    yolo_path = "model/Leni Gustia_Laporan 4.pt"
     cnn_path = "model/Leni_Gustia_Laporan_2.h5"
     if not os.path.exists(yolo_path):
         st.error(f"❌ File YOLO tidak ditemukan: {yolo_path}")
