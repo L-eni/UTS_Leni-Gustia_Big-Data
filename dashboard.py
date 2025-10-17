@@ -13,7 +13,7 @@ import time
 @st.cache_resource
 def load_models():
     yolo_model = YOLO("model/Leni Gustia_Laporan 4.pt")  # Model deteksi gender
-    classifier = tf.keras.models.load_model("model/Leni Gustia_Laporan 2.h5")  # Model klasifikasi alas kaki
+    classifier = tf.keras.models.load_model("model/Leni_Gustia_Laporan 2.h5")  # Model klasifikasi alas kaki
     return yolo_model, classifier
 
 yolo_model, classifier = load_models()
