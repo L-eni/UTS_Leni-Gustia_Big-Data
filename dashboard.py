@@ -12,9 +12,10 @@ import os
 # ==========================
 @st.cache_resource
 def load_models():
-    # Cek keberadaan file model
-    yolo_path = "model/Leni Gustia_Laporan 4.pt"
+    yolo_path = "model/Leni_Gustia_Laporan_4.pt"
     cnn_path = "model/Leni_Gustia_Laporan_2.h5"
+
+    # Cek keberadaan file model
     if not os.path.exists(yolo_path):
         st.error(f"❌ File YOLO tidak ditemukan: {yolo_path}")
         st.stop()
@@ -22,12 +23,19 @@ def load_models():
         st.error(f"❌ File CNN tidak ditemukan: {cnn_path}")
         st.stop()
 
-    # Load model
     yolo_model = YOLO(yolo_path)
     classifier = tf.keras.models.load_model(cnn_path)
-    return yolo_model, classifier
 
-yolo_model, classifier = load_models()
+    # Ambil class label dari model
+    if hasattr(classifier, "classes"):
+        class_labels = [cls for cls in classifier.classes]
+    else:
+        # fallback default, bisa diganti sesuai model training
+        class_labels = ["Boot", "Sandal", "Shoe"]
+
+    return yolo_model, classifier, class_labels
+
+yolo_model, classifier, class_labels = load_models()
 
 # ==========================
 # Fungsi Deteksi & Klasifikasi
@@ -49,17 +57,13 @@ def detect_objects(img, conf_threshold=0.3):
 
 def classify_image(img):
     try:
-        img = img.convert("RGB")  # pastikan RGB
-        # Resize sesuai input model
+        img = img.convert("RGB")
         input_shape = classifier.input_shape[1:3]  # (height, width)
         img_resized = img.resize(input_shape)
-        # Konversi ke array
         img_array = image.img_to_array(img_resized)
         img_array = np.expand_dims(img_array, axis=0) / 255.0
-        # Prediksi
         prediction = classifier.predict(img_array, verbose=0)
         class_index = np.argmax(prediction)
-        class_labels = ["Shoe", "Sandal", "Boot"]  # sesuaikan dataset kamu
         class_name = class_labels[class_index]
         confidence = np.max(prediction)
         return class_name, round(confidence * 100, 2)
@@ -107,7 +111,7 @@ if menu == "🧍 Deteksi Gender (YOLO)":
 # MODE 2: Klasifikasi Alas Kaki (CNN)
 # ==========================
 elif menu == "👞 Klasifikasi Alas Kaki (CNN)":
-    st.subheader("👞 Klasifikasi Alas Kaki (Shoe / Sandal / Boot) menggunakan CNN")
+    st.subheader("👞 Klasifikasi Alas Kaki menggunakan CNN")
     if uploaded_file is not None:
         img = Image.open(uploaded_file)
         st.image(img, caption="Gambar yang Diupload", use_container_width=True)
