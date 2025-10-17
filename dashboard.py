@@ -4,18 +4,27 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 import numpy as np
 from PIL import Image
-import cv2
 import time
+import os
 
 # ==========================
 # Load Models
 # ==========================
 @st.cache_resource
 def load_models():
-    # Model deteksi gender (YOLO)
-    yolo_model = YOLO("model/Leni Gustia_Laporan 4.pt")
-    # Model klasifikasi alas kaki (CNN)
-    classifier = tf.keras.models.load_model("model/Leni_Gustia_Laporan_2.h5")
+    # Cek keberadaan file model
+    yolo_path = "model/Leni_Gustia_Laporan_4.pt"
+    cnn_path = "model/Leni_Gustia_Laporan_2.h5"
+    if not os.path.exists(yolo_path):
+        st.error(f"❌ File YOLO tidak ditemukan: {yolo_path}")
+        st.stop()
+    if not os.path.exists(cnn_path):
+        st.error(f"❌ File CNN tidak ditemukan: {cnn_path}")
+        st.stop()
+
+    # Load model
+    yolo_model = YOLO(yolo_path)
+    classifier = tf.keras.models.load_model(cnn_path)
     return yolo_model, classifier
 
 yolo_model, classifier = load_models()
@@ -39,15 +48,24 @@ def detect_objects(img, conf_threshold=0.3):
 
 
 def classify_image(img):
-    img_resized = img.resize((224, 224))
-    img_array = image.img_to_array(img_resized)
-    img_array = np.expand_dims(img_array, axis=0) / 255.0
-    prediction = classifier.predict(img_array, verbose=0)
-    class_index = np.argmax(prediction)
-    class_labels = ["Shoe", "Sandal", "Boot"]
-    class_name = class_labels[class_index]
-    confidence = np.max(prediction)
-    return class_name, round(confidence * 100, 2)
+    try:
+        img = img.convert("RGB")  # pastikan RGB
+        # Resize sesuai input model
+        input_shape = classifier.input_shape[1:3]  # (height, width)
+        img_resized = img.resize(input_shape)
+        # Konversi ke array
+        img_array = image.img_to_array(img_resized)
+        img_array = np.expand_dims(img_array, axis=0) / 255.0
+        # Prediksi
+        prediction = classifier.predict(img_array, verbose=0)
+        class_index = np.argmax(prediction)
+        class_labels = ["Shoe", "Sandal", "Boot"]  # sesuaikan dataset kamu
+        class_name = class_labels[class_index]
+        confidence = np.max(prediction)
+        return class_name, round(confidence * 100, 2)
+    except Exception as e:
+        st.error(f"⚠️ Terjadi error pada klasifikasi: {e}")
+        return None, None
 
 # ==========================
 # UI (Streamlit)
@@ -56,7 +74,7 @@ st.set_page_config(page_title="👟 Gender & Footwear AI Detection", layout="wid
 st.title("👟 Gender & Footwear Recognition App")
 st.markdown("Aplikasi ini menggunakan **YOLOv8** untuk deteksi gender dan **CNN (TensorFlow)** untuk klasifikasi alas kaki.")
 
-# Sidebar menu
+# Sidebar
 menu = st.sidebar.radio("Pilih Mode:", ["🧍 Deteksi Gender (YOLO)", "👞 Klasifikasi Alas Kaki (CNN)"])
 conf_threshold = st.sidebar.slider("Confidence Threshold", 0.1, 1.0, 0.3, 0.05)
 uploaded_file = st.file_uploader("Unggah Gambar", type=["jpg", "jpeg", "png"])
@@ -66,9 +84,8 @@ uploaded_file = st.file_uploader("Unggah Gambar", type=["jpg", "jpeg", "png"])
 # ==========================
 if menu == "🧍 Deteksi Gender (YOLO)":
     st.subheader("🧍 Deteksi Gender (Men/Women) menggunakan YOLOv8")
-
     if uploaded_file is not None:
-        img = Image.open(uploaded_file).convert("RGB")
+        img = Image.open(uploaded_file)
         st.image(img, caption="Gambar yang Diupload", use_container_width=True)
 
         with st.spinner("🔎 Mendeteksi objek..."):
@@ -91,9 +108,8 @@ if menu == "🧍 Deteksi Gender (YOLO)":
 # ==========================
 elif menu == "👞 Klasifikasi Alas Kaki (CNN)":
     st.subheader("👞 Klasifikasi Alas Kaki (Shoe / Sandal / Boot) menggunakan CNN")
-
     if uploaded_file is not None:
-        img = Image.open(uploaded_file).convert("RGB")
+        img = Image.open(uploaded_file)
         st.image(img, caption="Gambar yang Diupload", use_container_width=True)
 
         with st.spinner("🧠 Mengklasifikasikan jenis alas kaki..."):
@@ -101,8 +117,9 @@ elif menu == "👞 Klasifikasi Alas Kaki (CNN)":
             class_name, confidence = classify_image(img)
             end_time = time.time()
 
-        st.success(f"✅ Jenis Alas Kaki: **{class_name}** ({confidence}%)")
-        st.caption(f"⏱️ Waktu Proses: {end_time - start_time:.2f} detik")
+        if class_name:
+            st.success(f"✅ Jenis Alas Kaki: **{class_name}** ({confidence}%)")
+            st.caption(f"⏱️ Waktu Proses: {end_time - start_time:.2f} detik")
 
 # ==========================
 # Footer
