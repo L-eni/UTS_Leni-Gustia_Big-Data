@@ -12,7 +12,7 @@ import os
 # ==========================
 @st.cache_resource
 def load_models():
-    yolo_path = "model/Leni_Gustia_Laporan_4.pt"
+    yolo_path = "model/Leni Gustia_Laporan 4.pt"
     cnn_path = "model/Leni_Gustia_Laporan_2.h5"
 
     # Cek keberadaan file model
