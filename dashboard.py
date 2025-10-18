@@ -30,7 +30,7 @@ Hanya dua domain model yang digunakan:
 @st.cache_resource(show_spinner=False)
 def load_models():
     # Ganti nama file sesuai yang benar (pastikan ekstensi .pt untuk YOLO)
-    yolo_path = "model/Leni_Gustia_Laporan_4.pt"
+    yolo_path = "model/Leni Gustia_Laporan 4.pt"
     cnn_path = "model/Leni_Gustia_Laporan_2.h5"
 
     if not os.path.exists(yolo_path):
