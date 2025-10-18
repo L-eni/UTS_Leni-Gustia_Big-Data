@@ -6,11 +6,11 @@ import tensorflow as tf
 
 # ==================== LOAD MODEL ====================
 # YOLO Model for Gender Detection
-yolo_model = YOLO("model/Leni Gustia_Laporan 4.p")
+yolo_model = YOLO("model/Leni Gustia_Laporan 4.pt")  # pastikan nama file & ekstensi benar
 
 # CNN Model for Shoe vs Sandal vs Boot Classification
 cnn_model = tf.keras.models.load_model("model/Leni_Gustia_Laporan_2.h5")
-cnn_labels = ["shoe", "sandal", "boot"]  # urut sesuai pelatihan model
+cnn_labels = ["shoe", "sandal", "boot"]
 
 # ==================== UI ====================
 st.set_page_config(page_title="Deteksi Gender & Alas Kaki", layout="centered")
@@ -30,11 +30,9 @@ if uploaded_file is not None:
         results = yolo_model.predict(img_array, conf=confidence_threshold)
         boxes = results[0].boxes
 
-        # Jika tidak ada objek terdeteksi
         if boxes is None or len(boxes) == 0:
             st.warning("❌ Tidak ada gender terdeteksi (mungkin bukan gambar orang)")
         else:
-            # Ambil box dengan confidence tertinggi
             confs = boxes.conf.numpy()
             best_idx = int(np.argmax(confs))
             conf = float(confs[best_idx])
@@ -49,8 +47,7 @@ if uploaded_file is not None:
 
     # ==================== MODE CNN ====================
     elif mode == "Klasifikasi Alas Kaki (CNN)":
-        # Resize gambar sesuai input CNN
-        img_resized = image.resize((150, 150))  # sesuaikan ukuran input model
+        img_resized = image.resize((150, 150))
         img_norm = np.array(img_resized) / 255.0
         img_input = np.expand_dims(img_norm, axis=0)
 
