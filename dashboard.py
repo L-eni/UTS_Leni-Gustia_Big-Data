@@ -6,10 +6,10 @@ import tensorflow as tf
 
 # ==================== LOAD MODEL ====================
 # YOLO Model for Gender Detection
-yolo_model = YOLO("model_gender_yolo.pt")
+yolo_model = YOLO("model/Leni Gustia_Laporan 4.p")
 
 # CNN Model for Shoe vs Sandal vs Boot Classification
-cnn_model = tf.keras.models.load_model("model_alas_kaki.h5")
+cnn_model = tf.keras.models.load_model("model/Leni_Gustia_Laporan_2.h5")
 cnn_labels = ["shoe", "sandal", "boot"]  # urut sesuai pelatihan model
 
 # ==================== UI ====================
