@@ -49,10 +49,9 @@ def load_models():
 yolo_model, classifier, class_labels = load_models()
 
 # ==========================
-# Fungsi Deteksi YOLO
+# Fungsi Deteksi YOLO (Gender)
 # ==========================
-def detect_objects(img, conf_threshold=0.3):
-    """Deteksi gender (Men/Women)."""
+def detect_gender(img, conf_threshold=0.3):
     results = yolo_model(img)
     annotated_img = results[0].plot()
     detected_objects = []
@@ -65,26 +64,23 @@ def detect_objects(img, conf_threshold=0.3):
         label = results[0].names[cls]
 
         if conf >= conf_threshold:
-            # Jika hasil bukan Men/Women
-            if label not in valid_labels:
+            if label in valid_labels:
                 detected_objects.append({
-                    "label": "Objek tidak sesuai dengan model",
+                    "label": label,
                     "confidence": round(conf * 100, 2)
                 })
             else:
                 detected_objects.append({
-                    "label": label,
+                    "label": "Objek tidak sesuai dengan model gender",
                     "confidence": round(conf * 100, 2)
                 })
 
     return annotated_img, detected_objects
 
-
 # ==========================
-# Fungsi Klasifikasi CNN
+# Fungsi Klasifikasi CNN (Alas Kaki)
 # ==========================
-def classify_image(img):
-    """Klasifikasi alas kaki (Shoe/Sandal/Boot)."""
+def classify_footwear(img):
     try:
         img = img.convert("RGB")
         input_shape = classifier.input_shape[1:3]
@@ -97,16 +93,14 @@ def classify_image(img):
         class_name = class_labels[class_index]
         confidence = np.max(prediction)
 
-        # Jika bukan salah satu label yang diizinkan
-        valid_labels = ["Shoe", "Sandal", "Boot"]
-        if class_name not in valid_labels:
-            class_name = "Model atau objek ini tidak sesuai"
+        # Validasi tambahan: kalau confidence kecil, anggap tidak sesuai
+        if confidence < 0.5:
+            class_name = "Gambar ini tidak sesuai dengan model alas kaki"
 
         return class_name, round(confidence * 100, 2)
     except Exception as e:
         st.error(f"⚠️ Terjadi error saat klasifikasi: {e}")
-        return "Model atau objek ini tidak sesuai", 0
-
+        return "Gambar ini tidak sesuai dengan model alas kaki", 0
 
 # ==========================
 # Sidebar
@@ -126,7 +120,7 @@ if menu == "🧍 Deteksi Gender (YOLO)":
 
         with st.spinner("🔎 Mendeteksi objek..."):
             start_time = time.time()
-            annotated_img, detections = detect_objects(img, conf_threshold)
+            annotated_img, detections = detect_gender(img, conf_threshold)
             duration = time.time() - start_time
 
         st.image(annotated_img, caption="Hasil Deteksi", use_container_width=True)
@@ -137,7 +131,7 @@ if menu == "🧍 Deteksi Gender (YOLO)":
             for i, det in enumerate(detections):
                 st.write(f"**{i+1}. {det['label']}** — Confidence: {det['confidence']}%")
         else:
-            st.warning("⚠️ Tidak ada objek terdeteksi.")
+            st.warning("⚠️ Tidak ada objek gender terdeteksi.")
     else:
         st.info("📤 Silakan unggah gambar untuk memulai deteksi.")
 
@@ -152,12 +146,11 @@ elif menu == "👞 Klasifikasi Alas Kaki (CNN)":
 
         with st.spinner("🧠 Mengklasifikasikan..."):
             start_time = time.time()
-            class_name, confidence = classify_image(img)
+            class_name, confidence = classify_footwear(img)
             duration = time.time() - start_time
 
-        # Jika hasil bukan domain alas kaki
-        if class_name == "Model atau objek ini tidak sesuai":
-            st.error("⚠️ Gambar ini tidak sesuai untuk model alas kaki.")
+        if class_name == "Gambar ini tidak sesuai dengan model alas kaki":
+            st.error("⚠️ Gambar ini bukan alas kaki atau confidence terlalu rendah.")
         else:
             st.success(f"✅ Jenis Alas Kaki: **{class_name}** ({confidence}%)")
             st.caption(f"⏱️ Waktu Proses: {duration:.2f} detik")
